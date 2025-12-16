@@ -13,9 +13,7 @@ const { userRouter } = require("./src/routes/user.Routes");
 
 const app = express();
 
-const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000")
-  .split(",")
-  .map((o) => o.trim());
+const allowedOrigins = process.env.CORS_ORIGINS.split(",").map((o) => o.trim());
 
 app.use(
   cors({
