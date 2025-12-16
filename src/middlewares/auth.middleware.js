@@ -14,7 +14,8 @@ const authenticateToken = async (req, res, next) => {
     }
 
 
-    const decoded = jwt.verify(token, "saikiranjwtkey");
+    const secret = process.env.JWT_SECRET || "saikiranjwtkey";
+    const decoded = jwt.verify(token, secret);
 
     const user = await userModel.findById(decoded.id);
     if (!user) {

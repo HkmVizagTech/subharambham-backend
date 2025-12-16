@@ -92,20 +92,19 @@ const userController = {
         return res.status(401).send({ message: "please try agin later" });
       }
       if (result == true) {
+        const secret = process.env.JWT_SECRET || "saikiranjwtkey";
         var token = jwt.sign(
           { email: user.email, id: user.id },
           "saikiranjwtkey"
         );
         res.cookie("userToken", token, { maxAge: 1000 * 60, http: true });
-        return res
-          .status(200)
-          .send({
-            status: 200,
-            message: "login success",
-            token: token,
-            role: user.role,
-            name: user.name,
-          });
+        return res.status(200).send({
+          status: 200,
+          message: "login success",
+          token: token,
+          role: user.role,
+          name: user.name,
+        });
       } else {
         return res.status(500).send({ message: "invalid login credentials" });
       }
