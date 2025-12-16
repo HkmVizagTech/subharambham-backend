@@ -155,7 +155,7 @@ const startAutomaticPaymentChecker = () => {
       // Create a lightweight request for auto-checking
       const mockReq = {
         user: { role: "admin" },
-        query: { limit: 0 }, // Process only 50 payments at a time
+        query: { limit: 30 }, // Process only 50 payments at a time
       };
       const mockRes = {
         json: (data) => {
