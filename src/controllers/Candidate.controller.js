@@ -324,13 +324,26 @@ const CandidateController = {
       const pickupDropLocation = (
         req.query.pickupDropLocation || ""
       ).toString();
+      const qParam = (req.query.q || "").toString().trim();
       const statuses = ["Paid", "Pending"];
       const filter = { paymentStatus: { $in: statuses } };
       if (pickupDropLocation) filter.pickupDropLocation = pickupDropLocation;
 
+      // text search across name, whatsappNumber, college, companyName
+      if (qParam) {
+        const escaped = qParam.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(escaped, "i");
+        filter.$or = [
+          { name: regex },
+          { whatsappNumber: regex },
+          { college: regex },
+          { companyName: regex },
+        ];
+      }
+
       let candidates = await Candidate.find(filter)
         .select(
-          "name whatsappNumber gender pickupDropLocation email college receipt"
+          "name whatsappNumber gender pickupDropLocation college companyName paymentStatus"
         )
         .sort({ name: 1 })
         .lean();
@@ -380,7 +393,7 @@ const CandidateController = {
 
       const candidates = await Candidate.find(filter)
         .select(
-          "name whatsappNumber gender pickupDropLocation email college receipt transportRequired adminAttendanceDate course branch"
+          "name whatsappNumber gender pickupDropLocation college companyName transportRequired adminAttendanceDate course branch paymentStatus"
         )
         .sort({ adminAttendanceDate: -1 })
         .lean();
