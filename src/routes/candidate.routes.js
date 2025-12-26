@@ -17,6 +17,12 @@ CandidateRouter.get(
   CandidateController.attendanceList
 );
 CandidateRouter.get(
+  "/admin/pickup-list",
+  authenticateToken,
+  requireRole(["admin"]),
+  CandidateController.pickupList
+);
+CandidateRouter.get(
   "/admin/scanned-list",
   authenticateToken,
   requireRole(["admin", "user"]),

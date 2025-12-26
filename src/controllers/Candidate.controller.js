@@ -318,6 +318,51 @@ const CandidateController = {
     }
   },
 
+  // Admin: list candidates filtered by pickup/drop location and payment status (Paid|Pending)
+  pickupList: async (req, res) => {
+    try {
+      const pickupDropLocation = (
+        req.query.pickupDropLocation || ""
+      ).toString();
+      const statuses = ["Paid", "Pending"];
+      const filter = { paymentStatus: { $in: statuses } };
+      if (pickupDropLocation) filter.pickupDropLocation = pickupDropLocation;
+
+      let candidates = await Candidate.find(filter)
+        .select(
+          "name whatsappNumber gender pickupDropLocation email college receipt"
+        )
+        .sort({ name: 1 })
+        .lean();
+
+      // Normalize whatsapp numbers to Indian format without leading + (e.g. 919876543210)
+      const normalizePhone = (raw) => {
+        if (!raw) return "";
+        const digits = String(raw).replace(/\D/g, "");
+        if (!digits) return "";
+        if (digits.startsWith("91") && digits.length >= 12) return digits;
+        if (digits.length === 10) return "91" + digits;
+        if (digits.startsWith("0") && digits.length === 11)
+          return "91" + digits.slice(1);
+        if (digits.startsWith("91") && digits.length === 12) return digits;
+        // fallback: return digits as-is
+        return digits;
+      };
+
+      candidates = candidates.map((c) => ({
+        ...c,
+        whatsappNumber: normalizePhone(c.whatsappNumber),
+      }));
+
+      return res.json(candidates);
+    } catch (err) {
+      console.error("pickupList error:", err);
+      return res
+        .status(500)
+        .json({ status: "error", message: "Failed to fetch pickup list" });
+    }
+  },
+
   templatePreview: async (req, res) => {
     try {
       const gender = (req.query.gender || req.body.gender || "").toString();
@@ -762,34 +807,27 @@ const CandidateController = {
 
   updateCandidate: async (req, res) => {
     try {
-      const updates = {
-        ...req.body,
-        lastUpdated: new Date(),
-        updatedBy: "saikiran11461",
-      };
-      const candidate = await Candidate.findByIdAndUpdate(
-        req.params.id,
-        updates,
-        { new: true, runValidators: true }
-      );
-      if (!candidate) {
-        return res.status(404).json({
-          status: "error",
-          message: "Candidate not found",
-        });
+      const { id } = req.params;
+      const update = { ...req.body };
+
+      // Prevent accidental overwrite of immutable fields
+      delete update._id;
+
+      const updated = await Candidate.findByIdAndUpdate(id, update, {
+        new: true,
+        runValidators: true,
+      });
+
+      if (!updated) {
+        return res
+          .status(404)
+          .json({ status: "error", message: "Candidate not found" });
       }
-      console.log(` Candidate updated: ${candidate.name} by saikiran11461`);
-      res.json({
-        status: "success",
-        message: "Candidate updated successfully",
-        candidate,
-      });
+
+      return res.json({ status: "success", candidate: updated });
     } catch (error) {
-      console.error(" Error updating candidate:", error);
-      res.status(400).json({
-        status: "error",
-        message: error.message,
-      });
+      console.error("updateCandidate error:", error);
+      return res.status(500).json({ status: "error", message: error.message });
     }
   },
 
