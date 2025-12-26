@@ -10,6 +10,7 @@ const {
   CandidateController,
 } = require("./src/controllers/Candidate.controller");
 const { userRouter } = require("./src/routes/user.Routes");
+const { collegeRouter } = require("./src/routes/college.routes");
 
 const app = express();
 
@@ -112,6 +113,9 @@ app.get("/check-pending-payments", async (req, res) => {
   }
 });
 
+app.use("/college", collegeRouter);
+app.use("/users/college", collegeRouter);
+
 app.use("/users", CandidateRouter);
 app.use("/admin/users", userRouter);
 
@@ -153,7 +157,7 @@ const startAutomaticPaymentChecker = () => {
       // Create a lightweight request for auto-checking
       const mockReq = {
         user: { role: "admin" },
-        query: { limit: 30 }, // Process only 50 payments at a time
+        query: { limit: 50 }, // Process only 50 payments at a time
       };
       const mockRes = {
         json: (data) => {

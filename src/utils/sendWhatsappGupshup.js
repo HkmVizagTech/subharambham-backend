@@ -2,8 +2,16 @@ const axios = require("axios");
 const FormData = require("form-data");
 const fs = require("fs");
 
-const GUPSHUP_API_KEY = "zbut4tsg1ouor2jks4umy1d92salxm38";
-const GUPSHUP_SOURCE = "917075176108";
+const GUPSHUP_API_KEY =
+  process.env.GUPSHUP_API_KEY || "zbut4tsg1ouor2jks4umy1d92salxm38";
+const GUPSHUP_SOURCE = process.env.GUPSHUP_SOURCE || "917075176108";
+
+// Template IDs configurable via environment
+const GUPSHUP_TEMPLATE_ID_BOYS = process.env.GUPSHUP_TEMPLATE_ID_BOYS || null;
+const GUPSHUP_TEMPLATE_ID_GIRLS = process.env.GUPSHUP_TEMPLATE_ID_GIRLS || null;
+const GUPSHUP_TEMPLATE_ID_WORKING =
+  process.env.GUPSHUP_TEMPLATE_ID_WORKING || null;
+const GUPSHUP_TEMPLATE_ID_GENERIC = process.env.GUPSHUP_TEMPLATE_ID || null;
 
 let gupshup;
 try {
@@ -321,18 +329,27 @@ async function sendWhatsappGupshup(
         `📤 Sending template message to ${candidate.name} (${normalizedNumber})`
       );
 
-      // Determine template ID
+      // Determine template ID (override wins). Use gender-only selection.
       let templateId = templateIdOverride;
       if (!templateId) {
-        // Template selection for registration confirmation
-        if (candidate.collegeOrWorking === "Working") {
-          // For ₹99/- Registration (Working professionals)
-          templateId = "62641f1e-aad7-4c96-933d-b0de01d2ee4c";
-          console.log("💼 Using ₹99 working professional template");
+        if (candidate.gender === "Female") {
+          templateId =
+            GUPSHUP_TEMPLATE_ID_GIRLS ||
+            GUPSHUP_TEMPLATE_ID_GENERIC ||
+            GUPSHUP_TEMPLATE_ID_BOYS;
+          console.log("🎓 Using female template", templateId);
+        } else if (candidate.gender === "Male") {
+          templateId =
+            GUPSHUP_TEMPLATE_ID_BOYS ||
+            GUPSHUP_TEMPLATE_ID_GENERIC ||
+            GUPSHUP_TEMPLATE_ID_GIRLS;
+          console.log("🎓 Using male template", templateId);
         } else {
-          // For students - common template irrespective of boy/girl
-          templateId = "66ab1b5c-f2df-4fd7-b8dc-1ea139a1f35e";
-          console.log("🎓 Using common student registration template");
+          templateId =
+            GUPSHUP_TEMPLATE_ID_GENERIC ||
+            GUPSHUP_TEMPLATE_ID_BOYS ||
+            GUPSHUP_TEMPLATE_ID_GIRLS;
+          console.log("🎓 Using generic template", templateId);
         }
       }
 

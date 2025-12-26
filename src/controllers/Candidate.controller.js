@@ -94,9 +94,23 @@ const CandidateController = {
         paymentAmount: parseFloat(amount) / 100,
         receipt: receipt,
         email: formData.email,
+        // Transport fields
+        transportRequired: formData.transportRequired === "yes",
+        pickupDropLocation:
+          formData.transportRequired === "yes"
+            ? formData.pickupDropLocation
+            : "",
       });
 
       console.log(" Saving candidate to database...");
+      console.log(
+        "DEBUG createOrder - transportRequired:",
+        formData.transportRequired,
+        "-> saved:",
+        candidate.transportRequired,
+        "pickupDropLocation:",
+        candidate.pickupDropLocation
+      );
       await candidate.save();
       console.log("Candidate saved successfully with ID:", candidate._id);
 
@@ -170,8 +184,22 @@ const CandidateController = {
         paymentAmount: parseFloat(amount) / 100,
         receipt: receipt,
         email: formData.email,
+        // Transport fields
+        transportRequired: formData.transportRequired === "yes",
+        pickupDropLocation:
+          formData.transportRequired === "yes"
+            ? formData.pickupDropLocation
+            : "",
         // ID card not stored in this cycle
       });
+
+      // Debug log for transport fields
+      console.log(
+        "DEBUG: Saving candidate with transportRequired:",
+        candidate.transportRequired,
+        "pickupDropLocation:",
+        candidate.pickupDropLocation
+      );
 
       console.log(" Saving candidate to database...");
       await candidate.save();
@@ -235,19 +263,34 @@ const CandidateController = {
         );
       } else {
         try {
-          // Template selection based on registration type
+          // Template selection based only on gender (ignore student/working)
           let templateId;
-          if (candidate.collegeOrWorking === "Working") {
-            // For ₹99/- Registration (Working professionals)
-            templateId = "62641f1e-aad7-4c96-933d-b0de01d2ee4c";
+          if (candidate.gender === "Female") {
+            templateId =
+              process.env.GUPSHUP_TEMPLATE_ID_GIRLS ||
+              process.env.GUPSHUP_TEMPLATE_ID ||
+              process.env.GUPSHUP_TEMPLATE_ID_BOYS;
             console.log(
-              `💼 Using ₹99 working professional template for ${candidate.name}`
+              `🎓 Using female template for ${candidate.name}:`,
+              templateId
+            );
+          } else if (candidate.gender === "Male") {
+            templateId =
+              process.env.GUPSHUP_TEMPLATE_ID_BOYS ||
+              process.env.GUPSHUP_TEMPLATE_ID ||
+              process.env.GUPSHUP_TEMPLATE_ID_GIRLS;
+            console.log(
+              `🎓 Using male template for ${candidate.name}:`,
+              templateId
             );
           } else {
-            // For students - common message irrespective of boy/girl
-            templateId = "66ab1b5c-f2df-4fd7-b8dc-1ea139a1f35e";
+            templateId =
+              process.env.GUPSHUP_TEMPLATE_ID ||
+              process.env.GUPSHUP_TEMPLATE_ID_BOYS ||
+              process.env.GUPSHUP_TEMPLATE_ID_GIRLS;
             console.log(
-              `🎓 Using common student registration template for ${candidate.name}`
+              `🎓 Using generic template for ${candidate.name}:`,
+              templateId
             );
           }
 
@@ -272,6 +315,41 @@ const CandidateController = {
       return res
         .status(500)
         .json({ status: "error", message: "Registration failed" });
+    }
+  },
+
+  templatePreview: async (req, res) => {
+    try {
+      const gender = (req.query.gender || req.body.gender || "").toString();
+      let templateId;
+      if (gender === "Female") {
+        templateId =
+          process.env.GUPSHUP_TEMPLATE_ID_GIRLS ||
+          process.env.GUPSHUP_TEMPLATE_ID ||
+          process.env.GUPSHUP_TEMPLATE_ID_BOYS ||
+          null;
+      } else if (gender === "Male") {
+        templateId =
+          process.env.GUPSHUP_TEMPLATE_ID_BOYS ||
+          process.env.GUPSHUP_TEMPLATE_ID ||
+          process.env.GUPSHUP_TEMPLATE_ID_GIRLS ||
+          null;
+      } else {
+        templateId =
+          process.env.GUPSHUP_TEMPLATE_ID ||
+          process.env.GUPSHUP_TEMPLATE_ID_BOYS ||
+          process.env.GUPSHUP_TEMPLATE_ID_GIRLS ||
+          null;
+      }
+
+      return res.json({
+        status: "ok",
+        gender: gender || "unspecified",
+        templateId,
+      });
+    } catch (err) {
+      console.error("templatePreview error:", err);
+      return res.status(500).json({ status: "error", message: err.message });
     }
   },
 
@@ -573,6 +651,15 @@ const CandidateController = {
         registrationDate: new Date(),
         lastUpdated: new Date(),
       };
+      // Transport fields
+      if (candidateData.transportRequired === "yes") {
+        candidateData.transportRequired = true;
+      } else if (candidateData.transportRequired === "no") {
+        candidateData.transportRequired = false;
+      }
+      if (candidateData.transportRequired !== true) {
+        candidateData.pickupDropLocation = "";
+      }
       const candidate = new Candidate(candidateData);
       await candidate.save();
       console.log(
@@ -1932,7 +2019,7 @@ const CandidateController = {
       }
       const candidates = await Candidate.find(query)
         .select(
-          "name email whatsappNumber college course attendance attendanceDate"
+          "name email whatsappNumber college course attendance attendanceDate transportRequired pickupDropLocation"
         )
         .sort({ attendanceDate: -1 });
       const summary = {
@@ -1958,7 +2045,7 @@ const CandidateController = {
     try {
       const candidates = await Candidate.find({ adminAttendance: true })
         .select(
-          "name email whatsappNumber college course branch gender year attendanceDate adminAttendanceDate"
+          "name email whatsappNumber college course branch gender year attendanceDate adminAttendanceDate transportRequired pickupDropLocation"
         )
         .sort({ adminAttendanceDate: -1 });
 

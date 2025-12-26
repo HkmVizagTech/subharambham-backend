@@ -7,6 +7,9 @@ const {
 const upload = require("../middlewares/upload.middleware");
 const CandidateRouter = express.Router();
 
+// Preview which Gupshup template would be used for a given gender (ensure this is before parameter routes)
+CandidateRouter.get("/template-preview", CandidateController.templatePreview);
+
 CandidateRouter.get(
   "/attendance-list",
   authenticateToken,
@@ -58,6 +61,9 @@ CandidateRouter.get(
   requireRole(["admin"]),
   CandidateController.getAllCandidates
 );
+
+// Preview which Gupshup template would be used for a given gender
+CandidateRouter.get("/template-preview", CandidateController.templatePreview);
 
 CandidateRouter.post(
   "/send-certificates",
