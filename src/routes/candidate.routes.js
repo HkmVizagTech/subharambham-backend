@@ -28,6 +28,14 @@ CandidateRouter.get(
   requireRole(["admin", "user"]),
   CandidateController.adminScannedList
 );
+
+// Full scanned list (includes transport fields) for admin UI
+CandidateRouter.get(
+  "/admin/scanned-list-full",
+  authenticateToken,
+  requireRole(["admin"]),
+  CandidateController.adminScannedListFull
+);
 CandidateRouter.get(
   "/eligible-for-certificate",
   authenticateToken,

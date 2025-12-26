@@ -363,6 +363,37 @@ const CandidateController = {
     }
   },
 
+  // Admin: full scanned attendance list including transport fields
+  adminScannedListFull: async (req, res) => {
+    try {
+      // Return candidates who have adminAttendance=true (scanned by admin)
+      const filter = { adminAttendance: true };
+      // optional date filters
+      if (req.query.startDate) {
+        filter.adminAttendanceDate = filter.adminAttendanceDate || {};
+        filter.adminAttendanceDate.$gte = new Date(req.query.startDate);
+      }
+      if (req.query.endDate) {
+        filter.adminAttendanceDate = filter.adminAttendanceDate || {};
+        filter.adminAttendanceDate.$lte = new Date(req.query.endDate);
+      }
+
+      const candidates = await Candidate.find(filter)
+        .select(
+          "name whatsappNumber gender pickupDropLocation email college receipt transportRequired adminAttendanceDate course branch"
+        )
+        .sort({ adminAttendanceDate: -1 })
+        .lean();
+
+      return res.json({ records: candidates });
+    } catch (err) {
+      console.error("adminScannedListFull error:", err);
+      return res
+        .status(500)
+        .json({ status: "error", message: "Failed to fetch scanned list" });
+    }
+  },
+
   templatePreview: async (req, res) => {
     try {
       const gender = (req.query.gender || req.body.gender || "").toString();
