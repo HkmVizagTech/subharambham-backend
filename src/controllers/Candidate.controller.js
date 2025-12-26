@@ -343,7 +343,7 @@ const CandidateController = {
 
       let candidates = await Candidate.find(filter)
         .select(
-          "name whatsappNumber gender pickupDropLocation college companyName paymentStatus"
+          "name whatsappNumber gender pickupDropLocation college companyName paymentStatus transportRequired"
         )
         .sort({ name: 1 })
         .lean();
@@ -365,6 +365,9 @@ const CandidateController = {
       candidates = candidates.map((c) => ({
         ...c,
         whatsappNumber: normalizePhone(c.whatsappNumber),
+        // For now derive pickup/drop status from transportRequired (both true if transportRequired)
+        pickupStatus: c.transportRequired ? "Yes" : "No",
+        dropStatus: c.transportRequired ? "Yes" : "No",
       }));
 
       return res.json(candidates);
