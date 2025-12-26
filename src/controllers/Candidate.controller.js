@@ -553,7 +553,7 @@ const CandidateController = {
               let templateId;
               if (candidate.collegeOrWorking === "Working") {
                 // For ₹99/- Registration (Working professionals)
-                templateId = "62641f1e-aad7-4c96-933d-b0de01d2ee4c";
+                // templateId = "62641f1e-aad7-4c96-933d-b0de01d2ee4c";
                 console.log(
                   `💼 Using ₹99 working professional template for ${candidate.name}`
                 );
